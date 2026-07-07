@@ -1,0 +1,1039 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>KadianAI LABS — Enterprise AI Solutions | Toronto</title>
+<meta name="description" content="KadianAI LABS designs, builds, and deploys production-grade GenAI and LLM solutions for financial services and regulated industries across Canada.">
+<meta name="keywords" content="AI consulting, GenAI, LLM, machine learning, Toronto, Canada, financial services, enterprise AI, Scotiabank, RAG, document automation">
+<meta name="author" content="KadianAI LABS Inc.">
+<meta name="robots" content="index, follow">
+<link rel="canonical" href="https://kadianailabs.com">
+
+<!-- Open Graph -->
+<meta property="og:title" content="KadianAI LABS — Enterprise AI Solutions">
+<meta property="og:description" content="We design, build, and deploy GenAI & LLM solutions for financial services and regulated industries — with measurable business impact.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://kadianailabs.com">
+<meta property="og:image" content="https://kadianailabs.com/og-image.png">
+<meta property="og:locale" content="en_CA">
+
+<!-- Twitter Card -->
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="KadianAI LABS — Enterprise AI Solutions">
+<meta name="twitter:description" content="Production-grade GenAI and LLM solutions for Canadian enterprise.">
+
+<!-- Favicon -->
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+
+<!-- Fonts -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Outfit:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg-deep: #0a0c10;
+    --bg-card: #12151c;
+    --bg-card-hover: #181c26;
+    --accent: #3bf0a0;
+    --accent-dim: rgba(59, 240, 160, 0.12);
+    --accent-glow: rgba(59, 240, 160, 0.25);
+    --text-primary: #e8ecf4;
+    --text-secondary: #8892a6;
+    --text-muted: #5a6478;
+    --border: rgba(255,255,255,0.06);
+    --border-accent: rgba(59, 240, 160, 0.2);
+    --gradient-mesh: radial-gradient(ellipse 80% 50% at 50% -20%, rgba(59, 240, 160, 0.08), transparent),
+                     radial-gradient(ellipse 60% 40% at 80% 60%, rgba(59, 140, 240, 0.04), transparent);
+  }
+
+  *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    font-family: 'Outfit', sans-serif;
+    background: var(--bg-deep);
+    color: var(--text-primary);
+    overflow-x: hidden;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* ─── NOISE OVERLAY ─── */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 9999;
+  }
+
+  /* ─── NAV ─── */
+  nav {
+    position: fixed;
+    top: 0;
+    width: 100%;
+    z-index: 100;
+    padding: 1.25rem 2.5rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: rgba(10, 12, 16, 0.8);
+    backdrop-filter: blur(20px);
+    border-bottom: 1px solid var(--border);
+    transition: all 0.3s ease;
+  }
+
+  .logo {
+    font-family: 'DM Serif Display', serif;
+    font-size: 1.35rem;
+    color: var(--text-primary);
+    text-decoration: none;
+    letter-spacing: -0.02em;
+  }
+  .logo span { color: var(--accent); }
+
+  .nav-links {
+    display: flex;
+    gap: 2.5rem;
+    align-items: center;
+    list-style: none;
+  }
+
+  .nav-links a {
+    color: var(--text-secondary);
+    text-decoration: none;
+    font-size: 0.875rem;
+    font-weight: 400;
+    letter-spacing: 0.02em;
+    transition: color 0.25s;
+  }
+  .nav-links a:hover { color: var(--accent); }
+
+  .nav-cta {
+    background: var(--accent) !important;
+    color: var(--bg-deep) !important;
+    padding: 0.6rem 1.4rem !important;
+    border-radius: 6px;
+    font-weight: 600 !important;
+    font-size: 0.85rem !important;
+    transition: all 0.25s !important;
+  }
+  .nav-cta:hover { box-shadow: 0 0 24px var(--accent-glow); transform: translateY(-1px); }
+
+  /* ─── HERO ─── */
+  .hero {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 8rem 2.5rem 6rem;
+    position: relative;
+    background: var(--gradient-mesh);
+  }
+
+  .hero::after {
+    content: '';
+    position: absolute;
+    top: 20%;
+    right: -10%;
+    width: 500px;
+    height: 500px;
+    background: radial-gradient(circle, rgba(59,240,160,0.06) 0%, transparent 70%);
+    border-radius: 50%;
+    filter: blur(80px);
+    animation: pulse 8s ease-in-out infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 0.5; transform: scale(1); }
+    50% { opacity: 1; transform: scale(1.15); }
+  }
+
+  .hero-inner {
+    max-width: 900px;
+    position: relative;
+    z-index: 2;
+  }
+
+  .hero-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.45rem 1rem;
+    border: 1px solid var(--border-accent);
+    border-radius: 100px;
+    font-size: 0.78rem;
+    color: var(--accent);
+    font-weight: 500;
+    letter-spacing: 0.04em;
+    margin-bottom: 2rem;
+    background: var(--accent-dim);
+    animation: fadeUp 0.8s ease both;
+  }
+  .hero-badge::before {
+    content: '';
+    width: 6px;
+    height: 6px;
+    background: var(--accent);
+    border-radius: 50%;
+    box-shadow: 0 0 8px var(--accent);
+    animation: blink 2s ease infinite;
+  }
+  @keyframes blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.3; }
+  }
+
+  .hero h1 {
+    font-family: 'DM Serif Display', serif;
+    font-size: clamp(2.8rem, 6vw, 4.5rem);
+    line-height: 1.08;
+    letter-spacing: -0.03em;
+    color: var(--text-primary);
+    margin-bottom: 1.5rem;
+    animation: fadeUp 0.8s ease 0.1s both;
+  }
+  .hero h1 em {
+    font-style: italic;
+    color: var(--accent);
+  }
+
+  .hero-sub {
+    font-size: 1.15rem;
+    color: var(--text-secondary);
+    max-width: 600px;
+    line-height: 1.7;
+    font-weight: 300;
+    margin-bottom: 2.5rem;
+    animation: fadeUp 0.8s ease 0.2s both;
+  }
+
+  .hero-actions {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+    animation: fadeUp 0.8s ease 0.3s both;
+  }
+
+  .btn-primary {
+    background: var(--accent);
+    color: var(--bg-deep);
+    padding: 0.85rem 2rem;
+    border: none;
+    border-radius: 8px;
+    font-family: 'Outfit', sans-serif;
+    font-size: 0.95rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .btn-primary:hover { box-shadow: 0 4px 30px var(--accent-glow); transform: translateY(-2px); }
+
+  .btn-secondary {
+    background: transparent;
+    color: var(--text-primary);
+    padding: 0.85rem 2rem;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-family: 'Outfit', sans-serif;
+    font-size: 0.95rem;
+    font-weight: 400;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-decoration: none;
+  }
+  .btn-secondary:hover { border-color: var(--text-muted); background: rgba(255,255,255,0.03); }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(24px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* ─── STATS BAR ─── */
+  .stats-bar {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+    background: rgba(18, 21, 28, 0.5);
+    backdrop-filter: blur(10px);
+  }
+
+  .stat {
+    padding: 2.5rem 2rem;
+    text-align: center;
+    border-right: 1px solid var(--border);
+    transition: background 0.3s;
+  }
+  .stat:last-child { border-right: none; }
+  .stat:hover { background: rgba(59, 240, 160, 0.03); }
+
+  .stat-value {
+    font-family: 'DM Serif Display', serif;
+    font-size: 2.2rem;
+    color: var(--accent);
+    letter-spacing: -0.02em;
+  }
+
+  .stat-label {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    margin-top: 0.3rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    font-weight: 500;
+  }
+
+  /* ─── SECTIONS ─── */
+  section {
+    padding: 6rem 2.5rem;
+  }
+
+  .section-container {
+    max-width: 1100px;
+    margin: 0 auto;
+  }
+
+  .section-eyebrow {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.72rem;
+    color: var(--accent);
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    margin-bottom: 1rem;
+    font-weight: 500;
+  }
+
+  .section-title {
+    font-family: 'DM Serif Display', serif;
+    font-size: clamp(2rem, 4vw, 2.8rem);
+    line-height: 1.15;
+    letter-spacing: -0.02em;
+    margin-bottom: 1.2rem;
+  }
+
+  .section-desc {
+    color: var(--text-secondary);
+    font-size: 1.05rem;
+    max-width: 600px;
+    line-height: 1.7;
+    font-weight: 300;
+    margin-bottom: 3.5rem;
+  }
+
+  /* ─── SERVICES ─── */
+  #services { background: var(--gradient-mesh); }
+
+  .services-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.25rem;
+  }
+
+  .service-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 2.2rem 1.8rem;
+    transition: all 0.35s ease;
+    position: relative;
+    overflow: hidden;
+  }
+  .service-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, var(--accent), transparent);
+    opacity: 0;
+    transition: opacity 0.35s;
+  }
+  .service-card:hover {
+    border-color: var(--border-accent);
+    background: var(--bg-card-hover);
+    transform: translateY(-4px);
+  }
+  .service-card:hover::before { opacity: 1; }
+
+  .service-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 10px;
+    background: var(--accent-dim);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 1.3rem;
+    font-size: 1.2rem;
+  }
+
+  .service-card h3 {
+    font-family: 'DM Serif Display', serif;
+    font-size: 1.2rem;
+    margin-bottom: 0.75rem;
+    letter-spacing: -0.01em;
+  }
+
+  .service-card p {
+    color: var(--text-secondary);
+    font-size: 0.88rem;
+    line-height: 1.65;
+    font-weight: 300;
+  }
+
+  .service-tag {
+    display: inline-block;
+    margin-top: 1.2rem;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.7rem;
+    color: var(--accent);
+    background: var(--accent-dim);
+    padding: 0.3rem 0.7rem;
+    border-radius: 4px;
+    letter-spacing: 0.03em;
+  }
+
+  /* ─── CASE STUDY ─── */
+  #results {
+    background: var(--bg-card);
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+  }
+
+  .case-study-card {
+    background: var(--bg-deep);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 3rem;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 3rem;
+    align-items: center;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .case-study-card::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(ellipse at top right, rgba(59,240,160,0.04), transparent 60%);
+  }
+
+  .case-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.68rem;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    margin-bottom: 0.6rem;
+  }
+
+  .case-study-card h3 {
+    font-family: 'DM Serif Display', serif;
+    font-size: 1.6rem;
+    margin-bottom: 1rem;
+    position: relative;
+  }
+
+  .case-study-card .desc {
+    color: var(--text-secondary);
+    font-size: 0.92rem;
+    line-height: 1.7;
+    font-weight: 300;
+    position: relative;
+  }
+
+  .case-metrics {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.25rem;
+    position: relative;
+  }
+
+  .metric {
+    background: rgba(18,21,28,0.6);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1.5rem;
+    text-align: center;
+    transition: all 0.3s;
+  }
+  .metric:hover { border-color: var(--border-accent); }
+
+  .metric-val {
+    font-family: 'DM Serif Display', serif;
+    font-size: 2rem;
+    color: var(--accent);
+  }
+
+  .metric-desc {
+    font-size: 0.78rem;
+    color: var(--text-muted);
+    margin-top: 0.3rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    font-weight: 500;
+  }
+
+  /* ─── TECH STACK ─── */
+  .tech-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.6rem;
+  }
+
+  .tech-chip {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    padding: 0.5rem 1rem;
+    border-radius: 6px;
+    transition: all 0.25s;
+    cursor: default;
+  }
+  .tech-chip:hover {
+    border-color: var(--border-accent);
+    color: var(--accent);
+    background: var(--accent-dim);
+  }
+
+  /* ─── ABOUT ─── */
+  .about-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 4rem;
+    align-items: start;
+  }
+
+  .about-text p {
+    color: var(--text-secondary);
+    font-size: 0.95rem;
+    line-height: 1.8;
+    font-weight: 300;
+    margin-bottom: 1.2rem;
+  }
+
+  .credentials {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .credential {
+    display: flex;
+    gap: 1rem;
+    align-items: start;
+    padding: 1.2rem 1.4rem;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    transition: all 0.3s;
+  }
+  .credential:hover { border-color: var(--border-accent); }
+
+  .credential-icon {
+    width: 36px;
+    height: 36px;
+    min-width: 36px;
+    background: var(--accent-dim);
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.9rem;
+  }
+
+  .credential h4 {
+    font-size: 0.9rem;
+    font-weight: 600;
+    margin-bottom: 0.2rem;
+  }
+
+  .credential p {
+    font-size: 0.78rem;
+    color: var(--text-muted);
+    font-weight: 400;
+  }
+
+  /* ─── CTA ─── */
+  .cta-section {
+    text-align: center;
+    padding: 8rem 2.5rem;
+    position: relative;
+    background: var(--gradient-mesh);
+  }
+
+  .cta-section::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 600px;
+    height: 600px;
+    background: radial-gradient(circle, rgba(59,240,160,0.06), transparent 65%);
+    filter: blur(60px);
+  }
+
+  .cta-section .section-title {
+    max-width: 600px;
+    margin: 0 auto 1rem;
+    position: relative;
+  }
+
+  .cta-section .section-desc {
+    max-width: 500px;
+    margin: 0 auto 2.5rem;
+    position: relative;
+  }
+
+  .cta-section .btn-primary { position: relative; }
+
+  .cta-email {
+    margin-top: 1.5rem;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.82rem;
+    color: var(--text-muted);
+    position: relative;
+  }
+  .cta-email a {
+    color: var(--text-secondary);
+    text-decoration: none;
+    transition: color 0.25s;
+  }
+  .cta-email a:hover { color: var(--accent); }
+
+  /* ─── FOOTER ─── */
+  footer {
+    padding: 2.5rem;
+    border-top: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.78rem;
+    color: var(--text-muted);
+  }
+
+  .footer-right {
+    display: flex;
+    gap: 2rem;
+  }
+  .footer-right a {
+    color: var(--text-muted);
+    text-decoration: none;
+    transition: color 0.25s;
+  }
+  .footer-right a:hover { color: var(--accent); }
+
+  /* ─── MOBILE NAV ─── */
+  .mobile-toggle {
+    display: none;
+    background: none;
+    border: none;
+    color: var(--text-primary);
+    font-size: 1.5rem;
+    cursor: pointer;
+    padding: 0.25rem;
+  }
+
+  /* ─── SCROLL REVEAL ─── */
+  .reveal {
+    opacity: 0;
+    transform: translateY(30px);
+    transition: opacity 0.7s ease, transform 0.7s ease;
+  }
+  .reveal.visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  /* ─── RESPONSIVE ─── */
+  @media (max-width: 900px) {
+    nav { padding: 1rem 1.5rem; }
+
+    .mobile-toggle { display: block; }
+
+    .nav-links {
+      display: none;
+      position: absolute;
+      top: 100%;
+      left: 0;
+      right: 0;
+      background: rgba(10, 12, 16, 0.96);
+      backdrop-filter: blur(20px);
+      flex-direction: column;
+      padding: 1.5rem;
+      gap: 1rem;
+      border-bottom: 1px solid var(--border);
+    }
+    .nav-links.open { display: flex; }
+
+    .hero { padding: 7rem 1.5rem 4rem; }
+    .hero h1 { font-size: 2.4rem; }
+
+    .stats-bar { grid-template-columns: repeat(2, 1fr); }
+    .stat { padding: 1.5rem 1rem; }
+    .stat:nth-child(2) { border-right: none; }
+
+    section { padding: 4rem 1.5rem; }
+
+    .services-grid { grid-template-columns: 1fr; }
+
+    .case-study-card {
+      grid-template-columns: 1fr;
+      padding: 2rem;
+      gap: 2rem;
+    }
+
+    .about-grid { grid-template-columns: 1fr; gap: 2rem; }
+
+    .cta-section { padding: 5rem 1.5rem; }
+
+    footer { flex-direction: column; gap: 1rem; text-align: center; }
+  }
+
+  @media (max-width: 600px) {
+    .hero h1 { font-size: 2rem; }
+    .hero-sub { font-size: 1rem; }
+    .hero-actions { flex-direction: column; }
+    .hero-actions a { text-align: center; }
+    .case-metrics { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ─── NAV ─── -->
+<nav>
+  <a href="#" class="logo">Kadian<span>AI</span> LABS</a>
+  <button class="mobile-toggle" aria-label="Toggle menu">&#9776;</button>
+  <ul class="nav-links">
+    <li><a href="#services">Services</a></li>
+    <li><a href="#results">Results</a></li>
+    <li><a href="#stack">Tech Stack</a></li>
+    <li><a href="#about">About</a></li>
+    <li><a href="#contact" class="nav-cta">Book a Call</a></li>
+  </ul>
+</nav>
+
+<!-- ─── HERO ─── -->
+<section class="hero">
+  <div class="hero-inner">
+    <div class="hero-badge">Based in Toronto, ON &nbsp;&middot;&nbsp; Serving Canadian Enterprise</div>
+    <h1>Enterprise AI that<br>delivers <em>real</em> ROI.</h1>
+    <p class="hero-sub">We design, build, and deploy GenAI &amp; LLM solutions for financial services and regulated industries &mdash; with measurable business impact, not just demos.</p>
+    <div class="hero-actions">
+      <a href="mailto:nishant@kadianailabs.com" class="btn-primary">Book a Discovery Call &rarr;</a>
+      <a href="#results" class="btn-secondary">See Our Results</a>
+    </div>
+  </div>
+</section>
+
+<!-- ─── STATS BAR ─── -->
+<div class="stats-bar">
+  <div class="stat reveal">
+    <div class="stat-value">$2M+</div>
+    <div class="stat-label">Annual Savings Delivered</div>
+  </div>
+  <div class="stat reveal">
+    <div class="stat-value">6+</div>
+    <div class="stat-label">Years AI/ML Experience</div>
+  </div>
+  <div class="stat reveal">
+    <div class="stat-value">60%</div>
+    <div class="stat-label">Recommendation Quality Lift</div>
+  </div>
+  <div class="stat reveal">
+    <div class="stat-value">Big 5</div>
+    <div class="stat-label">Canadian Bank Experience</div>
+  </div>
+</div>
+
+<!-- ─── SERVICES ─── -->
+<section id="services">
+  <div class="section-container">
+    <div class="section-eyebrow">// What We Do</div>
+    <h2 class="section-title">AI solutions built for<br>regulated industries.</h2>
+    <p class="section-desc">From rapid assessments to full production deployments &mdash; we bring GenAI into your operations safely, compliantly, and with clear business outcomes.</p>
+
+    <div class="services-grid">
+      <div class="service-card reveal">
+        <div class="service-icon">&#128269;</div>
+        <h3>AI Document Automation</h3>
+        <p>LLM-powered extraction, validation, and cross-referencing of mortgage documents, insurance policies, and compliance paperwork. Proven to save millions in manual processing.</p>
+        <span class="service-tag">3&ndash;6 week engagement</span>
+      </div>
+
+      <div class="service-card reveal">
+        <div class="service-icon">&#128172;</div>
+        <h3>RAG &amp; LLM Chatbots</h3>
+        <p>Internal knowledge assistants and customer-facing chatbots built on your proprietary data with enterprise-grade RAG architecture. Secure, accurate, hallucination-resistant.</p>
+        <span class="service-tag">4&ndash;8 week engagement</span>
+      </div>
+
+      <div class="service-card reveal">
+        <div class="service-icon">&#129504;</div>
+        <h3>GenAI Readiness Assessment</h3>
+        <p>A focused diagnostic of your data, infrastructure, and workflows &mdash; with a prioritized roadmap for GenAI adoption. Includes compliance and Responsible AI review.</p>
+        <span class="service-tag">2 week engagement</span>
+      </div>
+
+      <div class="service-card reveal">
+        <div class="service-icon">&#9889;</div>
+        <h3>LLM Fine-Tuning &amp; Deployment</h3>
+        <p>Custom fine-tuning of open-source LLMs (LLaMA, Gemini) on your proprietary data using PEFT techniques. Deployed as production APIs on AWS, Azure, or GCP.</p>
+        <span class="service-tag">6&ndash;10 week engagement</span>
+      </div>
+
+      <div class="service-card reveal">
+        <div class="service-icon">&#128202;</div>
+        <h3>ML-Powered Analytics</h3>
+        <p>Predictive models for underwriting, risk assessment, customer churn, and operational efficiency. From model design through production deployment with CI/CD pipelines.</p>
+        <span class="service-tag">4&ndash;8 week engagement</span>
+      </div>
+
+      <div class="service-card reveal">
+        <div class="service-icon">&#128737;&#65039;</div>
+        <h3>Fractional AI Leadership</h3>
+        <p>Ongoing strategic advisory for your AI/ML initiatives. Architecture reviews, team mentorship, vendor evaluations, and Responsible AI governance &mdash; without the full-time hire.</p>
+        <span class="service-tag">Monthly retainer</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ─── CASE STUDY ─── -->
+<section id="results">
+  <div class="section-container">
+    <div class="section-eyebrow">// Proven Results</div>
+    <h2 class="section-title">Impact you can measure.</h2>
+    <p class="section-desc">Real outcomes from production AI deployments at some of Canada's largest institutions.</p>
+
+    <div class="case-study-card reveal" style="margin-bottom: 1.5rem;">
+      <div>
+        <div class="case-label">Major Canadian Bank &middot; Mortgage Operations</div>
+        <h3>Automated Mortgage Pre-Funding Validation with LLMs</h3>
+        <p class="desc">Led the design and deployment of an LLM-powered pipeline (Google Gemini on GCP) that automates mortgage document data extraction and cross-validation &mdash; replacing a manual process that spanned multiple systems and compliance checkpoints. Aligned with Responsible AI guidelines and deployed in collaboration with IT, compliance, and business stakeholders.</p>
+      </div>
+      <div class="case-metrics">
+        <div class="metric">
+          <div class="metric-val">$2M</div>
+          <div class="metric-desc">Annual Cost Savings</div>
+        </div>
+        <div class="metric">
+          <div class="metric-val">90%</div>
+          <div class="metric-desc">Processing Time Reduction</div>
+        </div>
+        <div class="metric">
+          <div class="metric-val">100%</div>
+          <div class="metric-desc">Compliance Alignment</div>
+        </div>
+        <div class="metric">
+          <div class="metric-val">GCP</div>
+          <div class="metric-desc">Cloud Native Deploy</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="case-study-card reveal">
+      <div>
+        <div class="case-label">HR Tech Platform &middot; Recruitment Engine</div>
+        <h3>LLM-Powered Recruiter Recommendation System</h3>
+        <p class="desc">Architected and deployed a recommendation engine by fine-tuning LLaMA2-7B with PEFT on proprietary recruitment data. Combined LLM embeddings with XGBoost classification to predict candidate categories from recruiter search queries. Productionized on AWS with full CI/CD pipeline.</p>
+      </div>
+      <div class="case-metrics">
+        <div class="metric">
+          <div class="metric-val">60%</div>
+          <div class="metric-desc">Quality Improvement</div>
+        </div>
+        <div class="metric">
+          <div class="metric-val">21%</div>
+          <div class="metric-desc">Engagement Increase</div>
+        </div>
+        <div class="metric">
+          <div class="metric-val">LLaMA2</div>
+          <div class="metric-desc">Fine-Tuned LLM</div>
+        </div>
+        <div class="metric">
+          <div class="metric-val">AWS</div>
+          <div class="metric-desc">Production Deploy</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ─── TECH STACK ─── -->
+<section id="stack">
+  <div class="section-container">
+    <div class="section-eyebrow">// Technology</div>
+    <h2 class="section-title">Deep expertise across<br>the modern AI stack.</h2>
+    <p class="section-desc">We work with the tools that matter &mdash; not the ones that trend. Battle-tested in production at scale.</p>
+
+    <div class="reveal" style="margin-bottom: 2rem;">
+      <p style="font-size:0.78rem; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.1em; margin-bottom:0.8rem; font-weight:500;">LLMs &amp; GenAI</p>
+      <div class="tech-grid">
+        <span class="tech-chip">GPT-4</span>
+        <span class="tech-chip">Gemini</span>
+        <span class="tech-chip">LLaMA2</span>
+        <span class="tech-chip">BERT</span>
+        <span class="tech-chip">LangChain</span>
+        <span class="tech-chip">RAG</span>
+        <span class="tech-chip">PEFT / LoRA</span>
+        <span class="tech-chip">Prompt Engineering</span>
+        <span class="tech-chip">AI Agents</span>
+      </div>
+    </div>
+
+    <div class="reveal" style="margin-bottom: 2rem;">
+      <p style="font-size:0.78rem; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.1em; margin-bottom:0.8rem; font-weight:500;">ML &amp; Data Science</p>
+      <div class="tech-grid">
+        <span class="tech-chip">XGBoost</span>
+        <span class="tech-chip">TensorFlow</span>
+        <span class="tech-chip">PyTorch</span>
+        <span class="tech-chip">scikit-learn</span>
+        <span class="tech-chip">Deep Learning</span>
+        <span class="tech-chip">NLP</span>
+        <span class="tech-chip">Computer Vision</span>
+        <span class="tech-chip">PySpark</span>
+      </div>
+    </div>
+
+    <div class="reveal" style="margin-bottom: 2rem;">
+      <p style="font-size:0.78rem; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.1em; margin-bottom:0.8rem; font-weight:500;">Cloud &amp; Infrastructure</p>
+      <div class="tech-grid">
+        <span class="tech-chip">AWS</span>
+        <span class="tech-chip">Azure</span>
+        <span class="tech-chip">GCP</span>
+        <span class="tech-chip">Docker</span>
+        <span class="tech-chip">Jenkins</span>
+        <span class="tech-chip">FastAPI</span>
+        <span class="tech-chip">Flask</span>
+        <span class="tech-chip">Nginx</span>
+        <span class="tech-chip">ChromaDB</span>
+        <span class="tech-chip">MongoDB</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ─── ABOUT ─── -->
+<section id="about">
+  <div class="section-container">
+    <div class="section-eyebrow">// About</div>
+    <h2 class="section-title">Built by practitioners,<br>not theorists.</h2>
+
+    <div class="about-grid">
+      <div class="about-text reveal">
+        <p>KadianAI LABS is a Toronto-based AI consulting firm founded by Nishant Kadian. We specialize in designing and deploying production-grade GenAI and machine learning solutions for financial services and regulated industries across Canada.</p>
+        <p>Unlike staffing agencies that provide bodies, we deliver outcomes. Every engagement is scoped around measurable business impact &mdash; whether that's automating a $2M manual process or building an LLM-powered system that transforms how your team works.</p>
+        <p>We've built AI at Scotiabank, Ernst &amp; Young, WNS Global Services, and leading tech companies. We understand the intersection of cutting-edge AI and enterprise constraints: compliance, security, stakeholder alignment, and production reliability.</p>
+      </div>
+
+      <div class="credentials reveal">
+        <div class="credential">
+          <div class="credential-icon">&#127891;</div>
+          <div>
+            <h4>MSc Data Science</h4>
+            <p>Liverpool John Moores University</p>
+          </div>
+        </div>
+        <div class="credential">
+          <div class="credential-icon">&#127974;</div>
+          <div>
+            <h4>Financial Services AI</h4>
+            <p>Scotiabank &middot; Ernst &amp; Young &middot; WNS Global</p>
+          </div>
+        </div>
+        <div class="credential">
+          <div class="credential-icon">&#128101;</div>
+          <div>
+            <h4>Team Leadership</h4>
+            <p>Led teams of 6+ data scientists on enterprise projects</p>
+          </div>
+        </div>
+        <div class="credential">
+          <div class="credential-icon">&#127464;&#127462;</div>
+          <div>
+            <h4>Canadian Incorporated</h4>
+            <p>KadianAI LABS Inc. &middot; Ontario, Canada</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ─── CTA ─── -->
+<section class="cta-section" id="contact">
+  <div class="section-eyebrow">// Let's Talk</div>
+  <h2 class="section-title">Ready to put AI<br>to work?</h2>
+  <p class="section-desc">Book a free 30-minute discovery call. We'll discuss your use case, assess feasibility, and outline a path to production &mdash; no obligations.</p>
+  <a href="mailto:nishant@kadianailabs.com" class="btn-primary">Book a Discovery Call &rarr;</a>
+  <p class="cta-email">or email directly: <a href="mailto:nishant@kadianailabs.com">nishant@kadianailabs.com</a></p>
+</section>
+
+<!-- ─── FOOTER ─── -->
+<footer>
+  <span>&copy; 2026 KadianAI LABS Inc. &middot; Toronto, ON</span>
+  <div class="footer-right">
+    <a href="https://linkedin.com/in/" target="_blank">LinkedIn</a>
+    <a href="mailto:nishant@kadianailabs.com">Email</a>
+  </div>
+</footer>
+
+<!-- ─── SCRIPTS ─── -->
+<script>
+  // Mobile nav toggle
+  document.querySelector('.mobile-toggle').addEventListener('click', function() {
+    document.querySelector('.nav-links').classList.toggle('open');
+  });
+
+  // Close mobile nav on link click
+  document.querySelectorAll('.nav-links a').forEach(function(link) {
+    link.addEventListener('click', function() {
+      document.querySelector('.nav-links').classList.remove('open');
+    });
+  });
+
+  // Scroll reveal animation
+  const observer = new IntersectionObserver(function(entries) {
+    entries.forEach(function(entry) {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('visible');
+        observer.unobserve(entry.target);
+      }
+    });
+  }, { threshold: 0.15 });
+
+  document.querySelectorAll('.reveal').forEach(function(el) {
+    observer.observe(el);
+  });
+
+  // Nav shrink on scroll
+  var nav = document.querySelector('nav');
+  window.addEventListener('scroll', function() {
+    if (window.scrollY > 50) {
+      nav.style.padding = '0.75rem 2.5rem';
+      nav.style.background = 'rgba(10, 12, 16, 0.95)';
+    } else {
+      nav.style.padding = '1.25rem 2.5rem';
+      nav.style.background = 'rgba(10, 12, 16, 0.8)';
+    }
+  });
+</script>
+</body>
+</html>
