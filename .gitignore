@@ -1,0 +1,19 @@
+# Node
+node_modules/
+npm-debug.log*
+
+# Python
+__pycache__/
+*.pyc
+.pytest_cache/
+.venv/
+venv/
+
+# Terraform (from the EKS approach)
+**/.terraform/
+*.tfstate
+*.tfstate.*
+*.tfvars
+
+# Misc
+.DS_Store
