@@ -1,0 +1,77 @@
+# =============================================================================
+# DEPLOY PIPELINE  (Azure DevOps)
+# -----------------------------------------------------------------------------
+# What it does, in plain English:
+#   1. Triggers after the BUILD pipeline finishes successfully
+#   2. SSHes into the EC2 instance
+#   3. Tells EC2 to log in to ECR, pull the new image, and restart the
+#      container  (this is the "CD" part)
+#
+# Prerequisites (set up once in Azure DevOps, see README):
+#   - An SSH SERVICE CONNECTION named "ec2-ssh" pointing at the EC2 box
+#     (host = instance public IP, user = ec2-user, your private key).
+#   - Pipeline variables: AWS_REGION, AWS_ACCOUNT_ID
+#   - A pipeline RESOURCE link to the build pipeline (see "resources" below).
+# =============================================================================
+
+# Don't run on code push; run when the build pipeline completes.
+trigger: none
+
+resources:
+  pipelines:
+    - pipeline: buildPipeline          # local alias
+      source: "build.pipeline"          # name of the build pipeline in Azure DevOps
+      trigger:
+        branches:
+          include: [main]
+
+pool:
+  vmImage: ubuntu-latest
+
+variables:
+  imageName: cicd-demo-app
+  ecrRegistry: $(AWS_ACCOUNT_ID).dkr.ecr.$(AWS_REGION).amazonaws.com
+  # Reuse the exact image tag the build produced, so deploy == what was built.
+  imageTag: $(resources.pipeline.buildPipeline.runName)
+
+stages:
+  - stage: Deploy
+    displayName: "Deploy to EC2"
+    jobs:
+      - job: ssh_deploy
+        steps:
+          # Download the deploy scripts the build pipeline published.
+          - download: buildPipeline
+            artifact: deploy
+            displayName: "Get deploy scripts"
+
+          # Run remote commands on the EC2 box over SSH.
+          # The "SSH@0" task uses the "ec2-ssh" service connection.
+          - task: SSH@0
+            displayName: "Pull image & restart container on EC2"
+            inputs:
+              sshEndpoint: "ec2-ssh"
+              runOptions: "inline"
+              inline: |
+                set -e
+                REGION=$(AWS_REGION)
+                REGISTRY=$(ecrRegistry)
+                IMAGE=$REGISTRY/$(imageName):$(imageTag)
+
+                # 1. Log Docker in to ECR (instance IAM role grants pull access).
+                aws ecr get-login-password --region $REGION \
+                  | docker login --username AWS --password-stdin $REGISTRY
+
+                # 2. Pull the freshly built image.
+                docker pull $IMAGE
+
+                # 3. Replace the running container.
+                docker rm -f cicd-demo-app 2>/dev/null || true
+                docker run -d --restart unless-stopped \
+                  --name cicd-demo-app \
+                  -p 80:5000 \
+                  $IMAGE
+
+                # 4. Quick health check.
+                sleep 3
+                curl -fs http://localhost/health && echo " -> deploy OK"

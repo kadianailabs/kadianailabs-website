@@ -1,0 +1,92 @@
+# =============================================================================
+# BUILD PIPELINE  (Azure DevOps)
+# -----------------------------------------------------------------------------
+# What it does, in plain English:
+#   1. Runs the Python tests   (CI: catch bugs before shipping)
+#   2. Builds the Docker image
+#   3. Pushes the image to AWS ECR, tagged with the build number
+#   4. Publishes the deploy scripts so the DEPLOY pipeline can use them
+#
+# Naming note: Azure DevOps expects YAML, so the file is named
+# build.pipeline.yml. In Azure DevOps you point a Pipeline at this path.
+#
+# Prerequisites (set up once in Azure DevOps, see README):
+#   - A SERVICE CONNECTION named "aws-ecr" of type "AWS" (from the
+#     AWS Toolkit for Azure DevOps extension), OR plain AWS CLI creds as
+#     pipeline variables. This file uses the AWS CLI approach for clarity.
+#   - Pipeline variables: AWS_REGION, AWS_ACCOUNT_ID
+#   - Secret variables:   AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY
+# =============================================================================
+
+trigger:
+  branches:
+    include:
+      - main            # build automatically on every push to main
+
+pool:
+  vmImage: ubuntu-latest   # Microsoft-hosted Linux agent (has Docker + AWS CLI)
+
+variables:
+  imageName: cicd-demo-app
+  # ECR registry host, e.g. 123456789012.dkr.ecr.us-east-1.amazonaws.com
+  ecrRegistry: $(AWS_ACCOUNT_ID).dkr.ecr.$(AWS_REGION).amazonaws.com
+  # Use the build number as the image tag so every build is traceable.
+  imageTag: $(Build.BuildNumber)
+
+stages:
+  # ---------------------------------------------------------------------------
+  - stage: Test
+    displayName: "Run tests (CI)"
+    jobs:
+      - job: pytest
+        steps:
+          - task: UsePythonVersion@0
+            inputs:
+              versionSpec: "3.12"
+          - script: |
+              cd src/Python
+              pip install -r requirements.txt
+              pytest -v
+            displayName: "Install deps + run pytest"
+
+  # ---------------------------------------------------------------------------
+  - stage: BuildAndPush
+    displayName: "Build image & push to ECR"
+    dependsOn: Test          # only runs if tests passed
+    condition: succeeded()
+    jobs:
+      - job: docker
+        steps:
+          # Configure AWS CLI from the secret variables.
+          - script: |
+              aws configure set aws_access_key_id $(AWS_ACCESS_KEY_ID)
+              aws configure set aws_secret_access_key $(AWS_SECRET_ACCESS_KEY)
+              aws configure set default.region $(AWS_REGION)
+            displayName: "Configure AWS CLI"
+
+          # Log Docker in to ECR.
+          - script: |
+              aws ecr get-login-password --region $(AWS_REGION) \
+                | docker login --username AWS --password-stdin $(ecrRegistry)
+            displayName: "Log in to ECR"
+
+          # Build the image, stamping in the version (the build number).
+          - script: |
+              cd src/Python
+              docker build \
+                --build-arg APP_VERSION=$(imageTag) \
+                -t $(ecrRegistry)/$(imageName):$(imageTag) \
+                -t $(ecrRegistry)/$(imageName):latest .
+            displayName: "Build Docker image"
+
+          # Push both tags.
+          - script: |
+              docker push $(ecrRegistry)/$(imageName):$(imageTag)
+              docker push $(ecrRegistry)/$(imageName):latest
+            displayName: "Push to ECR"
+
+          # Publish the deploy scripts as a pipeline artifact named "deploy".
+          # The DEPLOY pipeline downloads this to know how to start the app.
+          - publish: $(Build.SourcesDirectory)/Devops/scripts
+            artifact: deploy
+            displayName: "Publish deploy scripts"

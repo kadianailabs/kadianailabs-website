@@ -1,0 +1,152 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: >
+  Simple learning stack for a Dockerized Flask app deployed to EC2.
+  Creates: an ECR repo (to store the image), an EC2 instance with Docker
+  pre-installed, an IAM role so the instance can pull from ECR, and a
+  security group opening SSH (22) and the app port (80).
+
+# ---------------------------------------------------------------------------
+# Parameters: values you pass in when you create the stack. Nothing secret is
+# hard-coded, so you can reuse this template safely.
+# ---------------------------------------------------------------------------
+Parameters:
+  KeyName:
+    Type: AWS::EC2::KeyPair::KeyName
+    Description: Existing EC2 key pair name (so you can SSH in).
+
+  VpcId:
+    Type: AWS::EC2::VPC::Id
+    Description: VPC to launch into (your default VPC is fine).
+
+  SubnetId:
+    Type: AWS::EC2::Subnet::Id
+    Description: A public subnet in the VPC above.
+
+  InstanceType:
+    Type: String
+    Default: t3.micro
+    AllowedValues: [t3.micro, t3.small, t2.micro]
+    Description: Small + cheap is perfect for learning.
+
+  SshAllowedCidr:
+    Type: String
+    Default: 0.0.0.0/0
+    Description: >
+      Who can SSH in. 0.0.0.0/0 = anyone (fine for a throwaway demo, but
+      better to use YOUR_IP/32 in real life).
+
+  LatestAmiId:
+    Type: AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>
+    Default: /aws/service/ami-amazon-linux-latest/al2023-ami-kernel-default-x86_64
+    Description: Always-current Amazon Linux 2023 AMI (don't change).
+
+Resources:
+  # -------------------------------------------------------------------------
+  # ECR: a private Docker registry. The build pipeline pushes images here.
+  # -------------------------------------------------------------------------
+  AppRepository:
+    Type: AWS::ECR::Repository
+    Properties:
+      RepositoryName: cicd-demo-app
+      ImageScanningConfiguration:
+        ScanOnPush: true
+      # Keep only the last 5 images so the repo doesn't grow forever.
+      LifecyclePolicy:
+        LifecyclePolicyText: |
+          {
+            "rules": [{
+              "rulePriority": 1,
+              "description": "Keep last 5 images",
+              "selection": {
+                "tagStatus": "any",
+                "countType": "imageCountMoreThan",
+                "countNumber": 5
+              },
+              "action": { "type": "expire" }
+            }]
+          }
+
+  # -------------------------------------------------------------------------
+  # IAM: lets the EC2 instance pull images from ECR without storing keys.
+  # -------------------------------------------------------------------------
+  Ec2Role:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal: { Service: ec2.amazonaws.com }
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        # Read-only pull access to ECR.
+        - arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly
+        # Lets you connect via Session Manager (browser SSH) too — handy.
+        - arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore
+
+  Ec2InstanceProfile:
+    Type: AWS::IAM::InstanceProfile
+    Properties:
+      Roles: [!Ref Ec2Role]
+
+  # -------------------------------------------------------------------------
+  # Security group: the instance's firewall.
+  # -------------------------------------------------------------------------
+  AppSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Allow SSH and HTTP to the demo app
+      VpcId: !Ref VpcId
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: !Ref SshAllowedCidr
+          Description: SSH
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 0.0.0.0/0
+          Description: App (HTTP)
+
+  # -------------------------------------------------------------------------
+  # EC2 instance: installs Docker on first boot via UserData.
+  # -------------------------------------------------------------------------
+  AppInstance:
+    Type: AWS::EC2::Instance
+    Properties:
+      InstanceType: !Ref InstanceType
+      ImageId: !Ref LatestAmiId
+      KeyName: !Ref KeyName
+      IamInstanceProfile: !Ref Ec2InstanceProfile
+      SubnetId: !Ref SubnetId
+      SecurityGroupIds: [!Ref AppSecurityGroup]
+      Tags:
+        - Key: Name
+          Value: cicd-demo-app
+      UserData:
+        Fn::Base64: |
+          #!/bin/bash
+          set -e
+          # Install + start Docker on first boot.
+          dnf update -y
+          dnf install -y docker
+          systemctl enable --now docker
+          # Let ec2-user run docker without sudo.
+          usermod -aG docker ec2-user
+
+# ---------------------------------------------------------------------------
+# Outputs: handy values shown after the stack is created.
+# ---------------------------------------------------------------------------
+Outputs:
+  InstancePublicIp:
+    Description: SSH/visit the app here
+    Value: !GetAtt AppInstance.PublicIp
+
+  AppUrl:
+    Description: Open this in a browser once deployed
+    Value: !Sub "http://${AppInstance.PublicIp}"
+
+  EcrRepositoryUri:
+    Description: Push/pull images at this URI
+    Value: !GetAtt AppRepository.RepositoryUri
