@@ -4,8 +4,11 @@
 # What it does, in plain English:
 #   1. Triggers after the BUILD pipeline finishes successfully
 #   2. SSHes into the EC2 instance
-#   3. Tells EC2 to log in to ECR, pull the new image, and restart the
-#      container  (this is the "CD" part)
+#   3. Tells EC2 to log in to ECR, pull the new frontend + backend images,
+#      and restart both containers  (this is the "CD" part)
+#
+# The AWS login on EC2 uses the instance's IAM role (AmazonEC2ContainerRegistry
+# ReadOnly, from Infra/infra.yaml) — NOT the build pipeline's access keys.
 #
 # Prerequisites (set up once in Azure DevOps, see README):
 #   - An SSH SERVICE CONNECTION named "ec2-ssh" pointing at the EC2 box
@@ -29,8 +32,6 @@ pool:
   vmImage: ubuntu-latest
 
 variables:
-  imageName: cicd-demo-app
-  ecrRegistry: $(AWS_ACCOUNT_ID).dkr.ecr.$(AWS_REGION).amazonaws.com
   # Reuse the exact image tag the build produced, so deploy == what was built.
   imageTag: $(resources.pipeline.buildPipeline.runName)
 
@@ -48,30 +49,42 @@ stages:
           # Run remote commands on the EC2 box over SSH.
           # The "SSH@0" task uses the "ec2-ssh" service connection.
           - task: SSH@0
-            displayName: "Pull image & restart container on EC2"
+            displayName: "Pull images & restart containers on EC2"
             inputs:
               sshEndpoint: "ec2-ssh"
               runOptions: "inline"
               inline: |
                 set -e
-                REGION=$(AWS_REGION)
-                REGISTRY=$(ecrRegistry)
-                IMAGE=$REGISTRY/$(imageName):$(imageTag)
+                AWS_REGION=$(AWS_REGION)
+                AWS_ACCOUNT_ID=$(AWS_ACCOUNT_ID)
+                IMAGE_TAG=$(imageTag)
+
+                REGISTRY="${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com"
+                FRONTEND_IMAGE="$REGISTRY/kadianai-frontend:$IMAGE_TAG"
+                BACKEND_IMAGE="$REGISTRY/kadianai-backend:$IMAGE_TAG"
 
                 # 1. Log Docker in to ECR (instance IAM role grants pull access).
-                aws ecr get-login-password --region $REGION \
-                  | docker login --username AWS --password-stdin $REGISTRY
+                aws ecr get-login-password --region "$AWS_REGION" \
+                  | docker login --username AWS --password-stdin "$REGISTRY"
 
-                # 2. Pull the freshly built image.
-                docker pull $IMAGE
+                # 2. Pull both freshly built images.
+                docker pull "$FRONTEND_IMAGE"
+                docker pull "$BACKEND_IMAGE"
 
-                # 3. Replace the running container.
-                docker rm -f cicd-demo-app 2>/dev/null || true
+                # 3. Replace the running containers.
+                docker rm -f kadianai-backend 2>/dev/null || true
                 docker run -d --restart unless-stopped \
-                  --name cicd-demo-app \
-                  -p 80:5000 \
-                  $IMAGE
+                  --name kadianai-backend \
+                  -p 8000:8000 \
+                  "$BACKEND_IMAGE"
 
-                # 4. Quick health check.
+                docker rm -f kadianai-frontend 2>/dev/null || true
+                docker run -d --restart unless-stopped \
+                  --name kadianai-frontend \
+                  -p 80:3000 \
+                  "$FRONTEND_IMAGE"
+
+                # 4. Quick health checks.
                 sleep 3
-                curl -fs http://localhost/health && echo " -> deploy OK"
+                curl -fs http://localhost/health      && echo " -> frontend OK"
+                curl -fs http://localhost:8000/health && echo " -> backend OK"

@@ -2,20 +2,26 @@
 # BUILD PIPELINE  (Azure DevOps)
 # -----------------------------------------------------------------------------
 # What it does, in plain English:
-#   1. Runs the Python tests   (CI: catch bugs before shipping)
-#   2. Builds the Docker image
-#   3. Pushes the image to AWS ECR, tagged with the build number
+#   1. Runs the Node frontend tests AND the Python backend tests (CI)
+#   2. Builds a Docker image for each service
+#   3. Pushes both images to AWS ECR, tagged with the build number
 #   4. Publishes the deploy scripts so the DEPLOY pipeline can use them
 #
-# Naming note: Azure DevOps expects YAML, so the file is named
-# build.pipeline.yml. In Azure DevOps you point a Pipeline at this path.
+# In Azure DevOps you point a Pipeline at this path and name it
+# "build.pipeline" (the deploy pipeline references it by that name).
 #
 # Prerequisites (set up once in Azure DevOps, see README):
-#   - A SERVICE CONNECTION named "aws-ecr" of type "AWS" (from the
-#     AWS Toolkit for Azure DevOps extension), OR plain AWS CLI creds as
-#     pipeline variables. This file uses the AWS CLI approach for clarity.
-#   - Pipeline variables: AWS_REGION, AWS_ACCOUNT_ID
-#   - Secret variables:   AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY
+#   - Pipeline variables (or a linked variable group):
+#       AWS_REGION       e.g. us-east-1
+#       AWS_ACCOUNT_ID   your 12-digit account id   <-- REQUIRED, easy to forget
+#   - Secret variables (lock icon):
+#       AWS_ACCESS_KEY_ID
+#       AWS_SECRET_ACCESS_KEY
+#
+# NOTE on secrets: Azure DevOps does NOT expose secret variables as environment
+# variables automatically. Every step that calls the AWS CLI therefore maps them
+# explicitly via an `env:` block below — this is what makes the credentials
+# reach the CLI (and avoids "Partial credentials found in env").
 # =============================================================================
 
 trigger:
@@ -27,7 +33,8 @@ pool:
   vmImage: ubuntu-latest   # Microsoft-hosted Linux agent (has Docker + AWS CLI)
 
 variables:
-  imageName: cicd-demo-app
+  frontendImage: kadianai-frontend
+  backendImage: kadianai-backend
   # ECR registry host, e.g. 123456789012.dkr.ecr.us-east-1.amazonaws.com
   ecrRegistry: $(AWS_ACCOUNT_ID).dkr.ecr.$(AWS_REGION).amazonaws.com
   # Use the build number as the image tag so every build is traceable.
@@ -38,7 +45,20 @@ stages:
   - stage: Test
     displayName: "Run tests (CI)"
     jobs:
-      - job: pytest
+      - job: frontend_tests
+        displayName: "Node frontend tests"
+        steps:
+          - task: NodeTool@0
+            inputs:
+              versionSpec: "20.x"
+          - script: |
+              cd src/Node
+              npm ci
+              npm test
+            displayName: "npm ci + node --test"
+
+      - job: backend_tests
+        displayName: "Python backend tests"
         steps:
           - task: UsePythonVersion@0
             inputs:
@@ -51,42 +71,56 @@ stages:
 
   # ---------------------------------------------------------------------------
   - stage: BuildAndPush
-    displayName: "Build image & push to ECR"
-    dependsOn: Test          # only runs if tests passed
+    displayName: "Build images & push to ECR"
+    dependsOn: Test          # only runs if BOTH test jobs passed
     condition: succeeded()
     jobs:
       - job: docker
         steps:
-          # Configure AWS CLI from the secret variables.
+          # Fail fast with a clear message if AWS_ACCOUNT_ID wasn't set.
           - script: |
-              aws configure set aws_access_key_id $(AWS_ACCESS_KEY_ID)
-              aws configure set aws_secret_access_key $(AWS_SECRET_ACCESS_KEY)
-              aws configure set default.region $(AWS_REGION)
-            displayName: "Configure AWS CLI"
+              if [ -z "$(AWS_ACCOUNT_ID)" ]; then
+                echo "##[error]AWS_ACCOUNT_ID is not set. Add it as a pipeline variable / variable group."
+                exit 1
+              fi
+              echo "Registry: $(ecrRegistry)"
+            displayName: "Check required variables"
 
-          # Log Docker in to ECR.
+          # Log Docker in to ECR. Secrets are mapped into the environment here,
+          # so the AWS CLI picks them up natively (no `aws configure`, nothing
+          # written to disk, no secret on a command line).
           - script: |
-              aws ecr get-login-password --region $(AWS_REGION) \
-                | docker login --username AWS --password-stdin $(ecrRegistry)
+              aws ecr get-login-password --region "$AWS_DEFAULT_REGION" \
+                | docker login --username AWS --password-stdin "$(ecrRegistry)"
             displayName: "Log in to ECR"
+            env:
+              AWS_ACCESS_KEY_ID: $(AWS_ACCESS_KEY_ID)
+              AWS_SECRET_ACCESS_KEY: $(AWS_SECRET_ACCESS_KEY)
+              AWS_DEFAULT_REGION: $(AWS_REGION)
 
-          # Build the image, stamping in the version (the build number).
+          # Build + push the FRONTEND image (Node SSR).
+          - script: |
+              cd src/Node
+              docker build \
+                --build-arg APP_VERSION=$(imageTag) \
+                -t $(ecrRegistry)/$(frontendImage):$(imageTag) \
+                -t $(ecrRegistry)/$(frontendImage):latest .
+              docker push $(ecrRegistry)/$(frontendImage):$(imageTag)
+              docker push $(ecrRegistry)/$(frontendImage):latest
+            displayName: "Build & push frontend image"
+
+          # Build + push the BACKEND image (Python API).
           - script: |
               cd src/Python
               docker build \
                 --build-arg APP_VERSION=$(imageTag) \
-                -t $(ecrRegistry)/$(imageName):$(imageTag) \
-                -t $(ecrRegistry)/$(imageName):latest .
-            displayName: "Build Docker image"
-
-          # Push both tags.
-          - script: |
-              docker push $(ecrRegistry)/$(imageName):$(imageTag)
-              docker push $(ecrRegistry)/$(imageName):latest
-            displayName: "Push to ECR"
+                -t $(ecrRegistry)/$(backendImage):$(imageTag) \
+                -t $(ecrRegistry)/$(backendImage):latest .
+              docker push $(ecrRegistry)/$(backendImage):$(imageTag)
+              docker push $(ecrRegistry)/$(backendImage):latest
+            displayName: "Build & push backend image"
 
           # Publish the deploy scripts as a pipeline artifact named "deploy".
-          # The DEPLOY pipeline downloads this to know how to start the app.
           - publish: $(Build.SourcesDirectory)/Devops/scripts
             artifact: deploy
             displayName: "Publish deploy scripts"
