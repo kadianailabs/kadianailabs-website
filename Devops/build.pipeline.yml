@@ -24,10 +24,10 @@
 # reach the CLI (and avoids "Partial credentials found in env").
 # =============================================================================
 
-trigger:
-  branches:
-    include:
-      - main            # build automatically on every push to main
+# trigger:
+#   branches:
+#     include:
+#       - main            # build automatically on every push to main
 
 pool:
   vmImage: ubuntu-latest   # Microsoft-hosted Linux agent (has Docker + AWS CLI)
