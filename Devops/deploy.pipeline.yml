@@ -3,8 +3,9 @@
 # -----------------------------------------------------------------------------
 # Two stages:
 #   1. ProvisionInfra - deploy/update the CloudFormation stack (Infra/infra.yaml):
-#      ECR repos + EC2 host (Docker) + IAM role + security group. Idempotent, so
-#      it's a no-op on later runs.
+#      EC2 host (Docker) + IAM role + security group. Idempotent, so it's a no-op
+#      on later runs. (The ECR repos are managed separately and are NOT created
+#      by this stack.)
 #   2. Deploy         - SSH into the EC2 host, pull the freshly built images,
 #      and restart both containers.
 #
@@ -23,10 +24,10 @@
 #   SshAllowedCidr        who may SSH in (defaults to 0.0.0.0/0 below)
 #
 # !! IMPORTANT - IAM !!
-# The ProvisionInfra stage creates ECR/EC2/IAM/SG resources, so the credentials
+# The ProvisionInfra stage creates EC2/IAM/SG resources, so the credentials
 # it uses need MUCH broader permissions than the ECR-push-only CI user:
-# cloudformation:*, ec2:*, ecr:CreateRepository, iam:CreateRole/PutRolePolicy/
-# PassRole/CreateInstanceProfile/etc. Either widen that user's policy, or (better)
+# cloudformation:*, ec2:*, iam:CreateRole/PutRolePolicy/PassRole/
+# CreateInstanceProfile/etc. Either widen that user's policy, or (better)
 # put separate, more-privileged infra credentials in AWS_ACCESS_KEY_ID /
 # AWS_SECRET_ACCESS_KEY for THIS pipeline only. Keep the build pipeline's user
 # scoped to ECR push.

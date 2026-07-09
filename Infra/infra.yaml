@@ -1,10 +1,11 @@
 AWSTemplateFormatVersion: "2010-09-09"
 Description: >
   KadianAI LABS stack: a Node.js SSR frontend + an independent Python backend,
-  each Dockerized and deployed to a single EC2 host. Creates two ECR repos (one
-  per service), an EC2 instance with Docker pre-installed, an IAM role so the
-  instance can pull from ECR, and a security group opening SSH (22), HTTP (80),
-  and the backend API port (8000).
+  each Dockerized and deployed to a single EC2 host. Creates an EC2 instance with
+  Docker pre-installed, an IAM role so the instance can pull from ECR, and a
+  security group opening SSH (22), HTTP (80), and the backend API port (8000).
+  NOTE: the ECR repositories (kadianai-frontend / kadianai-backend) are managed
+  separately (created out-of-band), so this template does not create them.
 
 # ---------------------------------------------------------------------------
 # Parameters: values you pass in when you create the stack. Nothing secret is
@@ -48,50 +49,9 @@ Parameters:
 
 Resources:
   # -------------------------------------------------------------------------
-  # ECR: private Docker registries. The build pipeline pushes images here —
-  # one repo per service.
+  # NOTE: ECR repositories (kadianai-frontend / kadianai-backend) are created
+  # and managed separately, so they are intentionally NOT defined here.
   # -------------------------------------------------------------------------
-  FrontendRepository:
-    Type: AWS::ECR::Repository
-    Properties:
-      RepositoryName: kadianai-frontend
-      ImageScanningConfiguration:
-        ScanOnPush: true
-      LifecyclePolicy:
-        LifecyclePolicyText: |
-          {
-            "rules": [{
-              "rulePriority": 1,
-              "description": "Keep last 5 images",
-              "selection": {
-                "tagStatus": "any",
-                "countType": "imageCountMoreThan",
-                "countNumber": 5
-              },
-              "action": { "type": "expire" }
-            }]
-          }
-
-  BackendRepository:
-    Type: AWS::ECR::Repository
-    Properties:
-      RepositoryName: kadianai-backend
-      ImageScanningConfiguration:
-        ScanOnPush: true
-      LifecyclePolicy:
-        LifecyclePolicyText: |
-          {
-            "rules": [{
-              "rulePriority": 1,
-              "description": "Keep last 5 images",
-              "selection": {
-                "tagStatus": "any",
-                "countType": "imageCountMoreThan",
-                "countNumber": 5
-              },
-              "action": { "type": "expire" }
-            }]
-          }
 
   # -------------------------------------------------------------------------
   # IAM: lets the EC2 instance pull images from ECR without storing keys.
@@ -180,11 +140,3 @@ Outputs:
   BackendUrl:
     Description: Backend API base URL
     Value: !Sub "http://${AppInstance.PublicIp}:8000"
-
-  FrontendRepositoryUri:
-    Description: Push/pull the frontend image at this URI
-    Value: !GetAtt FrontendRepository.RepositoryUri
-
-  BackendRepositoryUri:
-    Description: Push/pull the backend image at this URI
-    Value: !GetAtt BackendRepository.RepositoryUri

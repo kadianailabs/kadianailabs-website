@@ -34,7 +34,7 @@ root/
 │   ├── deploy.pipeline.yml     # CD: deploy both images to EC2
 │   └── scripts/deploy.sh       # manual deploy (same steps, by hand)
 ├── Infra/
-│   └── infra.yaml              # CloudFormation: 2× ECR + EC2 + IAM + SG
+│   └── infra.yaml              # CloudFormation: EC2 + IAM + SG (ECR repos managed separately)
 ├── src/
 │   ├── Node/                   # Node.js SSR frontend (Express + EJS)
 │   │   ├── server.js           # server, security headers, /health
@@ -90,7 +90,9 @@ docker run -p 8000:8000 kadianai-backend
 
 ## Step 1 — Create the AWS infrastructure (CloudFormation)
 
-Creates the two ECR repos and the EC2 box (Docker auto-installed).
+Creates the EC2 box (Docker auto-installed) + IAM role + security group. The two
+ECR repos (`kadianai-frontend`, `kadianai-backend`) are managed separately — create
+them once with `aws ecr create-repository` before the first build.
 
 ```bash
 aws cloudformation deploy \
@@ -104,8 +106,7 @@ aws cloudformation deploy \
       SshAllowedCidr=YOUR_IP/32
 ```
 
-Grab the outputs (**FrontendRepositoryUri**, **BackendRepositoryUri**,
-**InstancePublicIp**, **FrontendUrl**, **BackendUrl**):
+Grab the outputs (**InstancePublicIp**, **FrontendUrl**, **BackendUrl**):
 
 ```bash
 aws cloudformation describe-stacks --stack-name kadianai \
