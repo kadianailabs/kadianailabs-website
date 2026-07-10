@@ -1,40 +1,25 @@
 # =============================================================================
 # DEPLOY PIPELINE  (Azure DevOps)
 # -----------------------------------------------------------------------------
-# Two stages:
-#   1. ProvisionInfra - deploy/update the CloudFormation stack (Infra/infra.yaml):
-#      EC2 host (Docker) + IAM role + security group. Idempotent, so it's a no-op
-#      on later runs. (The ECR repos are managed separately and are NOT created
-#      by this stack.)
-#   2. Deploy         - SSH into the EC2 host, pull the freshly built images,
-#      and restart both containers.
+# Deploys the built images to the EC2 host: SSHes in, pulls the frontend +
+# backend images from ECR, and restarts both containers.
+#
+# This pipeline ONLY deploys images. Provisioning the infrastructure (EC2, IAM,
+# SG) is a separate pipeline — see infra.pipeline.yml — which you run once (and
+# again only when infra changes). The EC2 host and the "ec2-ssh" service
+# connection must already exist before this runs.
 #
 # Triggers after the BUILD pipeline finishes successfully (see resources).
 #
 # -----------------------------------------------------------------------------
-# REQUIRED variables (add as pipeline variables or a shared variable group):
-#   AWS_REGION            e.g. us-east-1
-#   AWS_ACCOUNT_ID        your 12-digit account id
-#   AWS_ACCESS_KEY_ID     (secret)  \  used by the ProvisionInfra stage to run
-#   AWS_SECRET_ACCESS_KEY (secret)  /  CloudFormation
-#   KeyName               existing EC2 key pair name (for SSH)
-#   VpcId                 vpc-xxxxxxxx  (a VPC to launch into)
-#   SubnetId              subnet-xxxxxxxx  (a PUBLIC subnet in that VPC)
-# Optional:
-#   SshAllowedCidr        who may SSH in (defaults to 0.0.0.0/0 below)
+# REQUIRED variables (pipeline variables or a linked variable group):
+#   AWS_REGION       e.g. us-east-1
+#   AWS_ACCOUNT_ID   your 12-digit account id
 #
-# !! IMPORTANT - IAM !!
-# The ProvisionInfra stage creates EC2/IAM/SG resources, so the credentials
-# it uses need MUCH broader permissions than the ECR-push-only CI user:
-# cloudformation:*, ec2:*, iam:CreateRole/PutRolePolicy/PassRole/
-# CreateInstanceProfile/etc. Either widen that user's policy, or (better)
-# put separate, more-privileged infra credentials in AWS_ACCESS_KEY_ID /
-# AWS_SECRET_ACCESS_KEY for THIS pipeline only. Keep the build pipeline's user
-# scoped to ECR push.
-#
-# Also required (one-time, manual): an SSH SERVICE CONNECTION named "ec2-ssh"
-# pointing at the EC2 public IP (user ec2-user, your private key). It can only be
-# created after the instance exists - see README.
+# REQUIRED service connection (one-time, manual — see README):
+#   "ec2-ssh"  SSH service connection pointing at the EC2 public IP
+#              (user ec2-user, your private key). Create it after infra.pipeline
+#              has provisioned the instance.
 # =============================================================================
 
 # Don't run on code push; run when the build pipeline completes.
@@ -52,73 +37,12 @@ pool:
   vmImage: ubuntu-latest
 
 variables:
-  stackName: kadianai
-  # Default kept permissive so the stack deploys out of the box; tighten to
-  # YOUR_IP/32 by overriding this variable.
-  SshAllowedCidr: 0.0.0.0/0
   # Reuse the exact image tag the build produced, so deploy == what was built.
   imageTag: $(resources.pipeline.buildPipeline.runName)
 
 stages:
-  # ---------------------------------------------------------------------------
-  - stage: ProvisionInfra
-    displayName: "Provision AWS infrastructure (CloudFormation)"
-    jobs:
-      - job: cloudformation
-        steps:
-          - checkout: self          # need Infra/infra.yaml from the repo
-
-          # Fail fast with a clear message if a required parameter is missing.
-          - script: |
-              missing=""
-              [ -z "$(AWS_ACCOUNT_ID)" ] && missing="$missing AWS_ACCOUNT_ID"
-              [ -z "$(KeyName)" ]        && missing="$missing KeyName"
-              [ -z "$(VpcId)" ]          && missing="$missing VpcId"
-              [ -z "$(SubnetId)" ]       && missing="$missing SubnetId"
-              if [ -n "$missing" ]; then
-                echo "##[error]Missing required variable(s):$missing"
-                exit 1
-              fi
-              echo "Deploying stack '$(stackName)' in $(AWS_REGION)"
-            displayName: "Check required variables"
-
-          - script: |
-              set -e
-              aws cloudformation deploy \
-                --template-file Infra/infra.yaml \
-                --stack-name "$(stackName)" \
-                --capabilities CAPABILITY_IAM \
-                --region "$AWS_DEFAULT_REGION" \
-                --no-fail-on-empty-changeset \
-                --parameter-overrides \
-                  KeyName="$(KeyName)" \
-                  VpcId="$(VpcId)" \
-                  SubnetId="$(SubnetId)" \
-                  SshAllowedCidr="$(SshAllowedCidr)"
-            displayName: "Deploy / update CloudFormation stack"
-            env:
-              AWS_ACCESS_KEY_ID: $(AWS_ACCESS_KEY_ID)
-              AWS_SECRET_ACCESS_KEY: $(AWS_SECRET_ACCESS_KEY)
-              AWS_DEFAULT_REGION: $(AWS_REGION)
-
-          # Print the stack outputs (public IP, repo URIs) into the log so you
-          # can grab the IP for the ec2-ssh service connection.
-          - script: |
-              aws cloudformation describe-stacks \
-                --stack-name "$(stackName)" \
-                --region "$AWS_DEFAULT_REGION" \
-                --query "Stacks[0].Outputs" --output table
-            displayName: "Show stack outputs"
-            env:
-              AWS_ACCESS_KEY_ID: $(AWS_ACCESS_KEY_ID)
-              AWS_SECRET_ACCESS_KEY: $(AWS_SECRET_ACCESS_KEY)
-              AWS_DEFAULT_REGION: $(AWS_REGION)
-
-  # ---------------------------------------------------------------------------
   - stage: Deploy
     displayName: "Deploy to EC2"
-    dependsOn: ProvisionInfra
-    condition: succeeded()
     jobs:
       - job: ssh_deploy
         steps:

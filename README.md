@@ -31,6 +31,7 @@ defined as code in CloudFormation. The layout follows the reference in
 root/
 ├── Devops/                     # the CI/CD pipelines
 │   ├── build.pipeline.yml      # CI: test, build, push both images
+│   ├── infra.pipeline.yml      # provision AWS infra (CloudFormation), on demand
 │   ├── deploy.pipeline.yml     # CD: deploy both images to EC2
 │   └── scripts/deploy.sh       # manual deploy (same steps, by hand)
 ├── Infra/
@@ -94,6 +95,10 @@ Creates the EC2 box (Docker auto-installed) + IAM role + security group. The two
 ECR repos (`kadianai-frontend`, `kadianai-backend`) are managed separately — create
 them once with `aws ecr create-repository` before the first build.
 
+You can run this from your machine with the command below, **or** from Azure via
+the **infra.pipeline** (which runs exactly this CloudFormation deploy). Both are
+idempotent.
+
 ```bash
 aws cloudformation deploy \
   --template-file Infra/infra.yaml \
@@ -116,17 +121,24 @@ aws cloudformation describe-stacks --stack-name kadianai \
 ## Step 2 — Set up Azure DevOps
 
 1. Push this repo to an Azure DevOps Git repo (or connect GitHub).
-2. **Pipelines → New pipeline → Existing YAML file** → select
-   `Devops/build.pipeline.yml`. Name it **build.pipeline**. Repeat for
-   `Devops/deploy.pipeline.yml` (the deploy pipeline references the build one
-   by that name).
-3. Add pipeline **variables** (Pipeline → Edit → Variables):
+2. **Pipelines → New pipeline → Existing YAML file** → create **three** pipelines,
+   one per YAML file. Name them to match:
+   - `Devops/build.pipeline.yml`  → name it **build.pipeline**
+   - `Devops/infra.pipeline.yml`  → name it **infra.pipeline** (run on demand)
+   - `Devops/deploy.pipeline.yml` → name it **deploy.pipeline** (it references
+     **build.pipeline** by name, and triggers after it succeeds)
+3. Add **variables** (a shared variable group is easiest — Pipelines → Library):
    - `AWS_REGION` (e.g. `us-east-1`)
    - `AWS_ACCOUNT_ID` (your 12-digit account id)
    - `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY` — mark these **secret**.
-4. Create an **SSH service connection** named `ec2-ssh`
-   (Project Settings → Service connections → New → SSH): host = EC2 public IP,
-   username = `ec2-user`, paste your private key.
+   - For **infra.pipeline** also: `KeyName`, `VpcId`, `SubnetId` (and optional
+     `SshAllowedCidr`, `stackName`). Its AWS creds need broad permissions
+     (CloudFormation/EC2/IAM), so prefer separate infra credentials.
+4. Run **infra.pipeline** once to create the EC2 host; note the
+   `InstancePublicIp` from its "Show stack outputs" log.
+5. Create an **SSH service connection** named `ec2-ssh`
+   (Project Settings → Service connections → New → SSH): host = that EC2 public
+   IP, username = `ec2-user`, paste your private key.
 
 ## Step 3 — Run it
 
