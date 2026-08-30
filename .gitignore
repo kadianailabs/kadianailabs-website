@@ -16,4 +16,5 @@ venv/
 *.tfvars
 
 # Misc
+.env
 .DS_Store
