@@ -40,7 +40,7 @@ spec:
       containers:
         - name: web
           # Replace <ACCOUNT_ID>/<REGION> or let CI patch the tag. Terraform outputs the ECR URL.
-          image: ACCOUNT_ID.dkr.ecr.REGION.amazonaws.com/kadianai-website:latest
+          image: 156892125575.dkr.ecr.us-east-1.amazonaws.com/k8s/kadianai-website:latest 
           imagePullPolicy: IfNotPresent
           ports:
             - name: http
