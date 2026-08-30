@@ -2,10 +2,10 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: kadianai-website
-  namespace: kadianai
+  namespace: kadianai-1
   labels:
     app.kubernetes.io/name: kadianai-website
-    app.kubernetes.io/part-of: kadianai
+    app.kubernetes.io/part-of: kadianai-1
 spec:
   replicas: 2
   revisionHistoryLimit: 5
@@ -21,7 +21,7 @@ spec:
     metadata:
       labels:
         app.kubernetes.io/name: kadianai-website
-        app.kubernetes.io/part-of: kadianai
+        app.kubernetes.io/part-of: kadianai-1
     spec:
       # Spread replicas across nodes/AZs for resilience.
       topologySpreadConstraints:
