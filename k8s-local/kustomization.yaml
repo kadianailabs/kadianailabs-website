@@ -3,12 +3,7 @@ kind: Kustomization
 
 resources:
   - ../k8s
-
-images:
-  - name: ACCOUNT_ID.dkr.ecr.REGION.amazonaws.com/kadianai-website
-    newName: kadianai-website
-    newTag: local
-
+  
 patches:
   - target:
       kind: Ingress

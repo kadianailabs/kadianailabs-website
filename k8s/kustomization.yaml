@@ -17,5 +17,5 @@ commonLabels:
   app.kubernetes.io/managed-by: kustomize
 
 images:
-  - name: ACCOUNT_ID.dkr.ecr.REGION.amazonaws.com/kadianai-website
+  - name: 156892125575.dkr.ecr.us-east-1.amazonaws.com/k8s/kadianai-website
     newTag: latest
