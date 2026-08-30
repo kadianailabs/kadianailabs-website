@@ -1,0 +1,95 @@
+# =============================================================================
+# DEPLOY PIPELINE  (Azure DevOps)
+# -----------------------------------------------------------------------------
+# Deploys the built images to the EC2 host: SSHes in, pulls the frontend +
+# backend images from ECR, and restarts both containers.
+#
+# This pipeline ONLY deploys images. Provisioning the infrastructure (EC2, IAM,
+# SG) is a separate pipeline — see infra.pipeline.yml — which you run once (and
+# again only when infra changes). The EC2 host and the "ec2-ssh" service
+# connection must already exist before this runs.
+#
+# Triggers after the BUILD pipeline finishes successfully (see resources).
+#
+# -----------------------------------------------------------------------------
+# REQUIRED variables (pipeline variables or a linked variable group):
+#   AWS_REGION       e.g. us-east-1
+#   AWS_ACCOUNT_ID   your 12-digit account id
+#
+# REQUIRED service connection (one-time, manual — see README):
+#   "ec2-ssh"  SSH service connection pointing at the EC2 public IP
+#              (user ec2-user, your private key). Create it after infra.pipeline
+#              has provisioned the instance.
+# =============================================================================
+
+# Don't run on code push; run when the build pipeline completes.
+trigger: none
+
+resources:
+  pipelines:
+    - pipeline: buildPipeline          # local alias
+      source: "build.pipeline"          # name of the build pipeline in Azure DevOps
+      trigger:
+        branches:
+          include: [main]
+
+pool:
+  vmImage: ubuntu-latest
+
+variables:
+  # Reuse the exact image tag the build produced, so deploy == what was built.
+  imageTag: $(resources.pipeline.buildPipeline.runName)
+
+stages:
+  - stage: Deploy
+    displayName: "Deploy to EC2"
+    jobs:
+      - job: ssh_deploy
+        steps:
+          # Download the deploy scripts the build pipeline published.
+          - download: buildPipeline
+            artifact: deploy
+            displayName: "Get deploy scripts"
+
+          # Run remote commands on the EC2 box over SSH.
+          # The "SSH@0" task uses the "ec2-ssh" service connection.
+          - task: SSH@0
+            displayName: "Pull images & restart containers on EC2"
+            inputs:
+              sshEndpoint: "ec2-ssh"
+              runOptions: "inline"
+              inline: |
+                set -e
+                AWS_REGION=$(AWS_REGION)
+                AWS_ACCOUNT_ID=$(AWS_ACCOUNT_ID)
+                IMAGE_TAG=$(imageTag)
+
+                REGISTRY="${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com"
+                FRONTEND_IMAGE="$REGISTRY/kadianai-frontend:$IMAGE_TAG"
+                BACKEND_IMAGE="$REGISTRY/kadianai-backend:$IMAGE_TAG"
+
+                # 1. Log Docker in to ECR (instance IAM role grants pull access).
+                aws ecr get-login-password --region "$AWS_REGION" \
+                  | docker login --username AWS --password-stdin "$REGISTRY"
+
+                # 2. Pull both freshly built images.
+                docker pull "$FRONTEND_IMAGE"
+                docker pull "$BACKEND_IMAGE"
+
+                # 3. Replace the running containers.
+                docker rm -f kadianai-backend 2>/dev/null || true
+                docker run -d --restart unless-stopped \
+                  --name kadianai-backend \
+                  -p 8000:8000 \
+                  "$BACKEND_IMAGE"
+
+                docker rm -f kadianai-frontend 2>/dev/null || true
+                docker run -d --restart unless-stopped \
+                  --name kadianai-frontend \
+                  -p 80:3000 \
+                  "$FRONTEND_IMAGE"
+
+                # 4. Quick health checks.
+                sleep 3
+                curl -fs http://localhost/health      && echo " -> frontend OK"
+                curl -fs http://localhost:8000/health && echo " -> backend OK"

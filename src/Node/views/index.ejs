@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>KadianAI LABS — Applied AI, engineered to ship</title>
+  <meta name="description" content="KadianAI LABS builds and deploys production AI systems — from model to pipeline to product." />
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+  <style>
+    :root {
+      --bg: #0b1120;
+      --panel: #111a2e;
+      --panel-2: #16223d;
+      --text: #e6edf7;
+      --muted: #93a4c3;
+      --accent: #38bdf8;
+      --accent-2: #7c3aed;
+      --border: #22304f;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background: radial-gradient(1200px 600px at 70% -10%, #16223d 0%, var(--bg) 60%);
+      color: var(--text);
+      line-height: 1.6;
+    }
+    a { color: var(--accent); text-decoration: none; }
+    .wrap { max-width: 1080px; margin: 0 auto; padding: 0 1.5rem; }
+    header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 1.25rem 0; border-bottom: 1px solid var(--border);
+    }
+    .brand { display: flex; align-items: center; gap: .6rem; font-weight: 700; font-size: 1.15rem; }
+    .brand .dot { width: 12px; height: 12px; border-radius: 50%; background: linear-gradient(135deg, var(--accent), var(--accent-2)); }
+    nav a { color: var(--muted); margin-left: 1.5rem; font-size: .95rem; }
+    nav a:hover { color: var(--text); }
+    .hero { padding: 5rem 0 3.5rem; }
+    .hero h1 { font-size: clamp(2rem, 5vw, 3.4rem); line-height: 1.1; margin: 0 0 1rem; }
+    .hero h1 span { background: linear-gradient(135deg, var(--accent), var(--accent-2)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+    .hero p { font-size: 1.2rem; color: var(--muted); max-width: 640px; }
+    .cta { margin-top: 2rem; display: flex; gap: 1rem; flex-wrap: wrap; }
+    .btn { padding: .8rem 1.6rem; border-radius: 10px; font-weight: 600; font-size: 1rem; cursor: pointer; border: none; }
+    .btn-primary { background: var(--accent); color: #05233a; }
+    .btn-primary:hover { background: #0ea5e9; }
+    .btn-ghost { background: transparent; color: var(--text); border: 1px solid var(--border); }
+    .btn-ghost:hover { border-color: var(--accent); }
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 1.25rem; padding: 2rem 0 4rem; }
+    .card { background: var(--panel); border: 1px solid var(--border); border-radius: 14px; padding: 1.6rem; }
+    .card h3 { margin: .2rem 0 .5rem; font-size: 1.15rem; }
+    .card p { color: var(--muted); margin: 0; font-size: .95rem; }
+    .card .ico { font-size: 1.6rem; }
+    footer { border-top: 1px solid var(--border); padding: 2rem 0; color: var(--muted); font-size: .85rem; display: flex; justify-content: space-between; flex-wrap: wrap; gap: .5rem; }
+    code { background: var(--panel-2); padding: .1rem .45rem; border-radius: 5px; font-size: .82rem; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div class="brand"><span class="dot"></span> KadianAI&nbsp;LABS</div>
+      <nav>
+        <a href="#work">What we do</a>
+        <a href="#stack">Stack</a>
+        <a href="/health">Status</a>
+      </nav>
+    </header>
+
+    <section class="hero">
+      <h1>Applied AI, <span>engineered to ship.</span></h1>
+      <p>
+        We design, build, and operate production AI systems — from model and
+        data pipeline to the product your users actually touch. Rendered
+        server-side by Node.js, backed by Python services, delivered through
+        a real CI/CD pipeline.
+      </p>
+      <div class="cta">
+        <button class="btn btn-primary" onclick="location.href='#work'">Explore the work</button>
+        <button class="btn btn-ghost" onclick="location.href='/health'">Live status</button>
+      </div>
+    </section>
+
+    <section class="grid" id="work">
+      <div class="card">
+        <div class="ico">🧠</div>
+        <h3>Model engineering</h3>
+        <p>Fine-tuning, evaluation, and inference systems built to hold up under real traffic and real cost constraints.</p>
+      </div>
+      <div class="card">
+        <div class="ico">🔗</div>
+        <h3>Data pipelines</h3>
+        <p>Reliable ingestion, transformation, and feature pipelines that keep your models fed with clean, current data.</p>
+      </div>
+      <div class="card">
+        <div class="ico">🚀</div>
+        <h3>Ship &amp; operate</h3>
+        <p>Containerized services, automated pipelines, and infrastructure-as-code so shipping is boring and repeatable.</p>
+      </div>
+    </section>
+
+    <section class="grid" id="stack">
+      <div class="card">
+        <div class="ico">🟩</div>
+        <h3>Node.js frontend</h3>
+        <p>Express + EJS server-side rendering. Hardened with the same security headers the site has always used.</p>
+      </div>
+      <div class="card">
+        <div class="ico">🐍</div>
+        <h3>Python services</h3>
+        <p>Independent Flask microservices behind gunicorn — versioned, tested, and deployed as their own artifacts.</p>
+      </div>
+      <div class="card">
+        <div class="ico">⚙️</div>
+        <h3>Azure Pipelines → AWS</h3>
+        <p>Build → test → push to ECR → deploy to EC2. Infrastructure defined as code in CloudFormation.</p>
+      </div>
+    </section>
+
+    <footer>
+      <span>© <%= year %> KadianAI LABS. All rights reserved.</span>
+      <span>
+        Frontend <code>v<%= version %></code>
+        <% if (apiBaseUrl) { %> · API <code><%= apiBaseUrl %></code><% } %>
+      </span>
+    </footer>
+  </div>
+</body>
+</html>

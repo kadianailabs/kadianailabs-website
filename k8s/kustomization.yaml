@@ -1,0 +1,21 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+# Apply everything with:  kubectl apply -k k8s/
+# Override the image in CI with:  kustomize edit set image kadianai-website=<ECR_URL>:<tag>
+namespace: kadianai-1
+
+resources:
+  - namespace.yaml
+  - deployment.yaml
+  - service.yaml
+  - ingress.yaml
+  - hpa.yaml
+  - pdb.yaml
+
+commonLabels:
+  app.kubernetes.io/managed-by: kustomize
+
+images:
+  - name: 156892125575.dkr.ecr.us-east-1.amazonaws.com/k8s/kadianai-website
+    newTag: latest

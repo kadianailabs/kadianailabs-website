@@ -1,0 +1,142 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: >
+  KadianAI LABS stack: a Node.js SSR frontend + an independent Python backend,
+  each Dockerized and deployed to a single EC2 host. Creates an EC2 instance with
+  Docker pre-installed, an IAM role so the instance can pull from ECR, and a
+  security group opening SSH (22), HTTP (80), and the backend API port (8000).
+  NOTE: the ECR repositories (kadianai-frontend / kadianai-backend) are managed
+  separately (created out-of-band), so this template does not create them.
+
+# ---------------------------------------------------------------------------
+# Parameters: values you pass in when you create the stack. Nothing secret is
+# hard-coded, so you can reuse this template safely.
+# ---------------------------------------------------------------------------
+Parameters:
+  KeyName:
+    Type: AWS::EC2::KeyPair::KeyName
+    Description: Existing EC2 key pair name (so you can SSH in).
+
+  VpcId:
+    Type: AWS::EC2::VPC::Id
+    Description: VPC to launch into (your default VPC is fine).
+
+  SubnetId:
+    Type: AWS::EC2::Subnet::Id
+    Description: A public subnet in the VPC above.
+
+  InstanceType:
+    Type: String
+    Default: t3.small
+    AllowedValues: [t3.micro, t3.small, t3.medium]
+    Description: Runs two containers, so t3.small+ is recommended.
+
+  SshAllowedCidr:
+    Type: String
+    Default: 0.0.0.0/0
+    Description: >
+      Who can SSH in. 0.0.0.0/0 = anyone (fine for a throwaway demo, but
+      better to use YOUR_IP/32 in real life).
+
+  ApiAllowedCidr:
+    Type: String
+    Default: 0.0.0.0/0
+    Description: Who can reach the backend API on port 8000.
+
+  LatestAmiId:
+    Type: AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>
+    Default: /aws/service/ami-amazon-linux-latest/al2023-ami-kernel-default-x86_64
+    Description: Always-current Amazon Linux 2023 AMI (don't change).
+
+Resources:
+  # -------------------------------------------------------------------------
+  # NOTE: ECR repositories (kadianai-frontend / kadianai-backend) are created
+  # and managed separately, so they are intentionally NOT defined here.
+  # -------------------------------------------------------------------------
+
+  # -------------------------------------------------------------------------
+  # IAM: lets the EC2 instance pull images from ECR without storing keys.
+  # -------------------------------------------------------------------------
+  Ec2Role:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal: { Service: ec2.amazonaws.com }
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly
+        - arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore
+
+  Ec2InstanceProfile:
+    Type: AWS::IAM::InstanceProfile
+    Properties:
+      Roles: [!Ref Ec2Role]
+
+  # -------------------------------------------------------------------------
+  # Security group: the instance's firewall.
+  # -------------------------------------------------------------------------
+  AppSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Allow SSH, HTTP (frontend), and the backend API port
+      VpcId: !Ref VpcId
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: !Ref SshAllowedCidr
+          Description: SSH
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 0.0.0.0/0
+          Description: Frontend (HTTP)
+        - IpProtocol: tcp
+          FromPort: 8000
+          ToPort: 8000
+          CidrIp: !Ref ApiAllowedCidr
+          Description: Backend API
+
+  # -------------------------------------------------------------------------
+  # EC2 instance: installs Docker on first boot via UserData.
+  # -------------------------------------------------------------------------
+  AppInstance:
+    Type: AWS::EC2::Instance
+    Properties:
+      InstanceType: !Ref InstanceType
+      ImageId: !Ref LatestAmiId
+      KeyName: !Ref KeyName
+      IamInstanceProfile: !Ref Ec2InstanceProfile
+      SubnetId: !Ref SubnetId
+      SecurityGroupIds: [!Ref AppSecurityGroup]
+      Tags:
+        - Key: Name
+          Value: kadianai-app
+      UserData:
+        Fn::Base64: |
+          #!/bin/bash
+          set -e
+          # Install + start Docker on first boot.
+          dnf update -y
+          dnf install -y docker
+          systemctl enable --now docker
+          # Let ec2-user run docker without sudo.
+          usermod -aG docker ec2-user
+
+# ---------------------------------------------------------------------------
+# Outputs: handy values shown after the stack is created.
+# ---------------------------------------------------------------------------
+Outputs:
+  InstancePublicIp:
+    Description: SSH/visit the app here
+    Value: !GetAtt AppInstance.PublicIp
+
+  FrontendUrl:
+    Description: Open this in a browser once deployed
+    Value: !Sub "http://${AppInstance.PublicIp}"
+
+  BackendUrl:
+    Description: Backend API base URL
+    Value: !Sub "http://${AppInstance.PublicIp}:8000"

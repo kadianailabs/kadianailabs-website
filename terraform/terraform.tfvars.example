@@ -1,0 +1,14 @@
+# Copy to terraform.tfvars and adjust as needed.
+region          = "us-east-1"
+project         = "kadianai-website"
+environment     = "production"
+cluster_version = "1.30"
+
+node_instance_types = ["t3.small"]
+node_desired_size   = 2
+node_min_size       = 2
+node_max_size       = 4
+
+# Set to true only if you have a Route53 hosted zone for the domain.
+domain_name            = "kadianailabs.com"
+create_acm_certificate = false

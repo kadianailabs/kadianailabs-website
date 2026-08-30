@@ -1,0 +1,48 @@
+# ─────────────────────────────────────────────────────────
+# ALB Ingress (AWS Load Balancer Controller).
+# Provisions an internet-facing Application Load Balancer, terminates
+# TLS with an ACM cert, and redirects HTTP -> HTTPS.
+#
+# Replace the ACM certificate ARN + host, or patch them in CI.
+# Terraform can output a wildcard/site ACM ARN if you manage the cert there.
+# ─────────────────────────────────────────────────────────
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: kadianai-website
+  namespace: kadianai
+  annotations:
+    alb.ingress.kubernetes.io/scheme: internet-facing
+    alb.ingress.kubernetes.io/target-type: ip
+    alb.ingress.kubernetes.io/load-balancer-name: kadianai-website
+    alb.ingress.kubernetes.io/listen-ports: '[{"HTTP":80},{"HTTPS":443}]'
+    alb.ingress.kubernetes.io/ssl-redirect: '443'
+    alb.ingress.kubernetes.io/certificate-arn: REPLACE_WITH_ACM_CERT_ARN
+    alb.ingress.kubernetes.io/healthcheck-path: /healthz
+    alb.ingress.kubernetes.io/healthcheck-protocol: HTTP
+    alb.ingress.kubernetes.io/success-codes: '200'
+    alb.ingress.kubernetes.io/ssl-policy: ELBSecurityPolicy-TLS13-1-2-2021-06
+    alb.ingress.kubernetes.io/tags: Project=kadianai,Environment=production
+spec:
+  ingressClassName: alb
+  rules:
+    - host: kadianailabs.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: kadianai-website
+                port:
+                  number: 80
+    - host: www.kadianailabs.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: kadianai-website
+                port:
+                  number: 80
