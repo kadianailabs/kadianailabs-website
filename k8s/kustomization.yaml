@@ -3,7 +3,7 @@ kind: Kustomization
 
 # Apply everything with:  kubectl apply -k k8s/
 # Override the image in CI with:  kustomize edit set image kadianai-website=<ECR_URL>:<tag>
-namespace: kadianai
+namespace: kadianai-1
 
 resources:
   - namespace.yaml
