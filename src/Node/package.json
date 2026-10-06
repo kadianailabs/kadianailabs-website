@@ -2,7 +2,7 @@
   "name": "kadianai-frontend",
   "version": "1.0.0",
   "private": true,
-  "description": "KadianAI LABS — Node.js (Express + EJS) server-side-rendered frontend.",
+  "description": "KadianAI LABS \u2014 Node.js (Express + EJS) server-side-rendered frontend.",
   "type": "commonjs",
   "main": "server.js",
   "engines": {
@@ -11,7 +11,8 @@
   "scripts": {
     "start": "node server.js",
     "dev": "node --watch server.js",
-    "test": "node --test"
+    "test": "node --test",
+    "build": "node build.js"
   },
   "dependencies": {
     "compression": "^1.7.4",

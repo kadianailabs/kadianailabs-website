@@ -1,51 +1,26 @@
-#!/bin/bash
-# -----------------------------------------------------------------------------
-# Manual deploy script. The DEPLOY pipeline runs the same steps over SSH,
-# but you can also run this directly ON the EC2 box to test by hand.
-#
-# It deploys BOTH services:
-#   - kadianai-frontend (Node SSR)  -> published on port 80  (container :3000)
-#   - kadianai-backend  (Python API) -> published on port 8000 (container :8000)
-#
-# Usage (on EC2):
-#   AWS_REGION=us-east-1 AWS_ACCOUNT_ID=123456789012 IMAGE_TAG=latest ./deploy.sh
-# -----------------------------------------------------------------------------
+#!/usr/bin/env bash
 set -euo pipefail
-
-: "${AWS_REGION:?set AWS_REGION}"
-: "${AWS_ACCOUNT_ID:?set AWS_ACCOUNT_ID}"
-IMAGE_TAG="${IMAGE_TAG:-latest}"
-
-FRONTEND_NAME="kadianai-frontend"
-BACKEND_NAME="kadianai-backend"
-REGISTRY="${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com"
-
-FRONTEND_IMAGE="${REGISTRY}/${FRONTEND_NAME}:${IMAGE_TAG}"
-BACKEND_IMAGE="${REGISTRY}/${BACKEND_NAME}:${IMAGE_TAG}"
-
-echo ">> Logging in to ECR..."
-aws ecr get-login-password --region "$AWS_REGION" \
-  | docker login --username AWS --password-stdin "$REGISTRY"
-
-echo ">> Pulling images..."
-docker pull "$FRONTEND_IMAGE"
-docker pull "$BACKEND_IMAGE"
-
-echo ">> (Re)starting backend..."
-docker rm -f "$BACKEND_NAME" 2>/dev/null || true
-docker run -d --restart unless-stopped \
-  --name "$BACKEND_NAME" \
-  -p 8000:8000 \
-  "$BACKEND_IMAGE"
-
-echo ">> (Re)starting frontend..."
-docker rm -f "$FRONTEND_NAME" 2>/dev/null || true
-docker run -d --restart unless-stopped \
-  --name "$FRONTEND_NAME" \
-  -p 80:3000 \
-  "$FRONTEND_IMAGE"
-
-echo ">> Health checks..."
-sleep 3
-curl -fs http://localhost/health        && echo " -> frontend OK"
-curl -fs http://localhost:8000/health   && echo " -> backend OK"
+: "${WEBSITE_IMAGE:?set WEBSITE_IMAGE to the exact registry/repository:tag}"
+# Require a traceable tag (or immutable digest), never latest or a placeholder.
+[[ "$WEBSITE_IMAGE" =~ ^[a-z0-9.-]+(:[0-9]+)?/[a-z0-9._/-]+(:[a-zA-Z0-9_][a-zA-Z0-9_.-]*|@sha256:[a-f0-9]{64})$ ]] \
+  || { echo "Invalid or untagged WEBSITE_IMAGE" >&2; exit 1; }
+[[ "$WEBSITE_IMAGE" != *:latest && "$WEBSITE_IMAGE" != *:unconfigured ]] \
+  || { echo "Use a traceable image tag" >&2; exit 1; }
+repo_root=$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)
+umask 077
+rendered=$(mktemp)
+trap 'rm -f "$rendered"' EXIT
+# Render before applying: no transient placeholder image or extra revision.
+kubectl set image --local -f "$repo_root/k8s/deployment.yaml" \
+  "web=$WEBSITE_IMAGE" -o yaml > "$rendered"
+kubectl apply -f "$repo_root/k8s/namespace.yaml"
+# Bootstrap the valid TLS certificate out of band; never serve a default certificate.
+kubectl -n kadianai-1 get secret website-tls -o name >/dev/null
+if [[ "${REFRESH_ECR_SECRET:-true}" == true ]]; then
+  bash "$repo_root/Devops/scripts/refresh-ecr-secret.sh"
+fi
+kubectl -n kadianai-1 get secret ecr-pull -o name >/dev/null
+kubectl apply -f "$repo_root/k8s/service.yaml"
+kubectl apply -f "$rendered"
+kubectl apply -f "$repo_root/k8s/ingress.yaml"
+kubectl -n kadianai-1 rollout status deployment/kadianai-website --timeout=120s

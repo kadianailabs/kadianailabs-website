@@ -14,13 +14,3 @@ patches:
       kind: Ingress
       metadata:
         name: kadianai-website
-
-  - target:
-      kind: HorizontalPodAutoscaler
-      name: kadianai-website
-    patch: |-
-      $patch: delete
-      apiVersion: autoscaling/v2
-      kind: HorizontalPodAutoscaler
-      metadata:
-        name: kadianai-website

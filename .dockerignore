@@ -1,0 +1,13 @@
+**
+!Dockerfile
+!nginx/
+!nginx/*.conf
+!src/
+!src/Node/
+!src/Node/package.json
+!src/Node/package-lock.json
+!src/Node/build.js
+!src/Node/views/
+!src/Node/views/**
+!src/Node/public/
+!src/Node/public/**

@@ -1,0 +1,11 @@
+[Unit]
+Description=Refresh website ECR pull credential
+After=k3s.service network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+Environment=KUBECONFIG=/etc/rancher/k3s/k3s.yaml
+EnvironmentFile=/etc/website-ecr.env
+ExecStart=/bin/bash /usr/local/lib/website/refresh-ecr-secret.sh
+UMask=0077

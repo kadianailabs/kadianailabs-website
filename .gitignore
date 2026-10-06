@@ -18,3 +18,12 @@ venv/
 # Misc
 .env
 .DS_Store
+
+# Deployment credentials and generated artifacts
+**/dist/
+.kube/
+*kubeconfig*
+*.pem
+*.key
+.docker/
+.deploy-bundle/
